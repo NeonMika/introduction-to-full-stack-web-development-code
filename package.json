@@ -1,0 +1,19 @@
+{
+  "name": "teaching-introduction-to-full-stack-web-development-code",
+  "version": "1.0.0",
+  "description": "Code for the course \"Introduction to Full Stack Web Development\" offered by Dr. Markus Weninger @ Johannes Kepler University Linz, Austria",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeonMika/introduction-to-full-stack-web-development-code.git"
+  },
+  "author": "Dr. Markus Weninger",
+  "license": "CC-BY-4.0",
+  "bugs": {
+    "url": "https://github.com/NeonMika/introduction-to-full-stack-web-development-code/issues"
+  },
+  "homepage": "https://github.com/NeonMika/introduction-to-full-stack-web-development-code#readme"
+}
