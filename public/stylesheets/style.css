@@ -1,8 +1,50 @@
+/*
+  This is a CSS Comment.
+*/
+
+/*
+  The general structure of a CSS rule-set consists of a selector and a declaration block:
+
+  selector {
+    property: value;
+  }
+*/
+
 body {
   padding: 50px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
+
+/* This is a so-called "type selector". It is applied on all tags of type a (all links) */
 a {
   color: #00B7FF;
+}
+
+/* This is a so-called "class selector". It is applied on all tags which contain "rb" in their "class" attribute */
+.rb {
+  border-radius: 5px;
+  border: 1px black solid;
+}
+
+/* This is a so-called "ID selector". It is applied on a single element with the id logo */
+#logo {
+  transform: rotate(25deg);
+}
+
+/* This is a so-called "attribue selector". It is applied on all a (link) elements which have https in their href */
+a[href*="https"] {
+  color: #00B700;
+}
+
+/* This is a so-called "pseudo-class selector". It is applied on hovered a (link) elements */
+a:hover {
+  color: #CC0000;
+}
+
+/* This is a so-called "pseudo-elements selector". It is applied on the first letter of each paragraph */
+p::first-letter {
+  font-size: 1.5em;
+  font-weight: 900;
+  font-family: serif;
 }
