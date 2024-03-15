@@ -9,7 +9,7 @@
 <head>
   <title>Introduction to Full Stack Web Development - Demo Page</title>
 
-  <!-- We will talk about CSS styling in more detail soon -->
+  <!-- We can have internal CSS styles, defined here in the head -->
   <style>
     table {
       border: 5px solid gray;
@@ -22,10 +22,14 @@
       border: 1px solid black;
     }
   </style>
+
+  <!-- We can have external CSS files, stored on our server -->
+  <link rel="stylesheet" href="stylesheets/style.css">
 </head>
 
 <body>
-  <h1>Demo Application</h1>
+  <!-- We can have inline CSS using the style attribute -->
+  <h1 style="text-decoration: underline;">Demo Application</h1>
 
   <h3>Using Paragraphs (using the <code>p</code> tag)</h3>
   <p>This is a paragraph</p>
