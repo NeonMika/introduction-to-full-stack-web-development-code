@@ -8,6 +8,20 @@
 
 <head>
   <title>Introduction to Full Stack Web Development - Demo Page</title>
+
+  <!-- We will talk about CSS styling in more detail soon -->
+  <style>
+    table {
+      border: 5px solid gray;
+      border-collapse: collapse;
+    }
+    th {
+      border: 2px solid black;
+    }
+    td {
+      border: 1px solid black;
+    }
+  </style>
 </head>
 
 <body>
@@ -49,6 +63,34 @@
     <li><code>&lt;ul&gt;</code> for unordered lists</li>
     <li><code>&lt;li&gt;</code> for list items</li>
   </ul>
+
+  <h3>Tables</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Student ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Markus</td>
+        <td>Weninger</td>
+        <td>censored</td>
+      </tr>      
+      <tr>
+        <td>Guy</td>
+        <td>My</td>
+        <td>11223344</td>
+      </tr>
+      <tr>
+        <td>Anna</td>
+        <td>Ommo</td>
+        <td>12312300</td>
+      </tr>
+    </tbody>
+  </table>
 </body>
 
 </html>
