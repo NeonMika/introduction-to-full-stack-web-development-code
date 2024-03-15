@@ -16,12 +16,12 @@ body {
 }
 
 
-/* This is a so-called "type selector". It is applied on all tags of type a (all links) */
+/* This is a so-called "type selector". It is applied on all elements of type a (all links) */
 a {
   color: #00B7FF;
 }
 
-/* This is a so-called "class selector". It is applied on all tags which contain "rb" in their "class" attribute */
+/* This is a so-called "class selector". It is applied on all elements which contain "rb" in their "class" attribute */
 .rb {
   border-radius: 5px;
   border: 1px black solid;
@@ -47,4 +47,26 @@ p::first-letter {
   font-size: 1.5em;
   font-weight: 900;
   font-family: serif;
+}
+
+/* =================== */
+/* === Combinators === */
+/* =================== */
+
+/* Child combinator */
+/* This is applied on all code elements that are direct children of list items */
+li > code {
+  background-color: yellow;
+}
+
+/* Descendant combinator */
+/* This is applied on all td elements that are children (direct or indirect) of tfoot elements */
+tfoot td {
+  background-color: antiquewhite;
+}
+
+/* Selector list */
+/* Applied to all headings */
+h1, h2, h3, h4, h5, h6 {
+  background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(236,236,222,1) 30%, rgba(251,253,29,1) 50%, rgba(229,230,212,1) 75%, rgba(255,255,255,1) 100%);
 }
