@@ -68,7 +68,8 @@ tfoot td {
 /* Selector list */
 /* Applied to all headings */
 h1, h2, h3, h4, h5, h6 {
-  background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(236,236,222,1) 30%, rgba(251,253,29,1) 50%, rgba(229,230,212,1) 75%, rgba(255,255,255,1) 100%);
+  /* background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(236,236,222,1) 30%, rgba(251,253,29,1) 50%, rgba(229,230,212,1) 75%, rgba(255,255,255,1) 100%); */
+  text-shadow: #FC0 1px 0 10px;
 }
 
 #boxmodelshowcase {
