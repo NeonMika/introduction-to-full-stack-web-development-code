@@ -67,3 +67,33 @@ function dataTypes() {
   fn.why_not = "here we go"
   console.log(fn) // shows information about the function, including its property "why_not"
 }
+
+function controlFlow() {
+  let x = 10;
+  if (x > 5) {
+    console.log('x is greater than 5');
+  }
+
+  for (let i = 0; i < 5; i++) {
+    console.log(i);
+  }
+
+  let person = {fname:"John", lname:"Doe", age:25};
+
+  // prints fname, lname, age
+  for (let x in person) {
+    console.log(x);
+  }
+
+  let cars = ['BMW', 'Volvo', 'Mini'];
+
+  // This for-of loop ...
+  for (let x of cars) {
+    console.log(x);
+  }
+
+  // ... is equivalent to this for-in loop
+  for (let i in cars) {
+    console.log(cars[i]);
+  }
+}
