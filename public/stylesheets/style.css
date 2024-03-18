@@ -70,3 +70,13 @@ tfoot td {
 h1, h2, h3, h4, h5, h6 {
   background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(236,236,222,1) 30%, rgba(251,253,29,1) 50%, rgba(229,230,212,1) 75%, rgba(255,255,255,1) 100%);
 }
+
+#boxmodelshowcase {
+  margin: 50px; /* Sets all margins (top, right, bottom, left) of the element to 50px */
+  border-width: 20px 40px 60px 80px; /* Sets the width of the top, right, bottom, and left borders respectively */
+  border-style: solid; /* Defines the border style as solid */
+  border-color: black; /* Sets the color of the border to black */
+  padding: 10px 400px; /* Sets the padding; top and bottom padding to 10px, left and right padding to 400px */
+  /* There are also separate rules for padding-left, padding-top, etc. if you do not want to specify them in a single rule */
+  background-color: aquamarine;
+}
