@@ -32,6 +32,12 @@
   <!-- We can have inline CSS using the style attribute -->
   <h1 style="text-decoration: underline;">Demo Application</h1>
 
+  <h3>Using JavaScript</h3>
+
+  I want to display some number here: <span id="somenumber">no number yet</span>
+
+  <button onclick="incX()">Init number / Increment number</button>
+
   <h3>Using Paragraphs (using the <code>p</code> tag)</h3>
   <p>This is a paragraph</p>
 
@@ -111,6 +117,28 @@
       </tr>
     </tfoot>
   </table>
+
+  <script>
+    let x = 0
+
+    function incX() {
+      /*
+      When an event occurs, the browser creates an "event object" in `window.event` which can be
+      accessed using the shortcut `event`.
+      This object contains details about the event, including:
+        Type of the event: Such as 'click', 'load', 'mouseover', etc.
+        Target element: The element that triggered the event.
+        Timestamp: When the event occurred.
+        Mouse position: For mouse events, where the cursor was.
+        Key pressed: For keyboard events, which key was pressed.
+      */
+      console.log(event)
+      console.log(event.target) // we do not really need sender, since we can extract that information from event
+      x++
+      console.log(x)
+      document.getElementById('somenumber').textContent = x
+    }
+  </script>
 </body>
 
 </html>
