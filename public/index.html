@@ -26,6 +26,9 @@
 
   <!-- We can have external CSS files, stored on our server -->
   <link rel="stylesheet" href="stylesheets/style.css">
+
+  <!--- We can have external JS files, stored on our server-->
+  <script src="js/helper.js"></script>
 </head>
 
 <body>
@@ -37,6 +40,10 @@
   I want to display some number here: <span id="somenumber">no number yet</span>
 
   <button onclick="incX()">Init number / Increment number</button>
+
+  <br>
+
+  <button onclick="showAndLogWarning('Attention')">Attention</button>
 
   <h3>Using Paragraphs (using the <code>p</code> tag)</h3>
   <p>This is a paragraph</p>
