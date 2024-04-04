@@ -11,60 +11,103 @@
 
   <!-- We can have external CSS files, stored on our server -->
   <link rel="stylesheet" href="stylesheets/style.css">
+
+  <!--
+    Typically, we would develop a full Vue application with SFCs (single file components) for which we
+    would run "npm create vue@latest" on the console (see https://vuejs.org/guide/quick-start.html) to create
+    a new frontend Vue application.
+
+    If we just intend to use simple Vue on a single page without the need for any additional build tools
+    we can just use the following script.
+  -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 
 <body>
-  <a href="demo.html">Here you can find the introduction page for HTML, CSS and JavaScript</a>
+  <div id="app">
+    <a href="demo.html">Here you can find the introduction page for HTML, CSS and JavaScript</a>
 
-  <h1>
-    Party Planner
-  </h1>
+    <h1>
+      Party Planner
+    </h1>
 
-  <h3>
-    Currently suggested songs
-  </h3>
+    <h3>
+      Currently suggested songs
+    </h3>
 
-  <ol>
-    <li>
-      <details>
-      <summary>'Rick Astley - Never Gonna Give You Up' - 7 votes - <button>^</button> &nbsp; <button>v</button> &nbsp; <button>X</button></summary>
-      <h4>Added by</h4>
-      <emph>drmarkus</emph>
-      <h4>Comment</h4>
-      This song gets every party started.
-      <h4>Options</h4>
-      <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Play</a>
-      </details>
-    </li>
-    <li>
-      <details>
-      <summary>'I Want It That Way | Brooklyn Nine-Nine' - 4 votes - <button>^</button> &nbsp; <button>v</button> &nbsp; <button>X</button></summary>
-      <h4>Added by</h4>
-      <emph>fiat9002</emph>
-      <h4>Comment</h4>
-      This song gets every party started.
-      <h4>Options</h4>
-      <a href="https://www.youtube.com/watch?v=HlBYdiXdUa8">Play</a>
-      </details>
-    </li>
-  </ol>
+    <ol>
+      <!-- Using Vue we can now have loops in our HTML -->
+      <li v-for="(s, idx) in sortedSuggestions">
+        <details>
+        <!-- The moustache syntax {{ x }} is used to add dynamic data to the site -->
+        <!-- The @event="..." syntax allows us to install event handlers -->
+        <summary>{{ s.title }} - {{ s.votes }} votes - <button @click="s.votes++" class="button-increase">^</button> &nbsp; <button @click="s.votes = Math.max(s.votes - 1, 0)" class="button-decrease">v</button> &nbsp; <button @click="removeSong(s.title)" class="button-remove">X</button></summary>
 
-  <h3>
-    Suggest new song
-  </h3>
+        <h4>Added by</h4>
+        <emph>{{ s.contributor }}</emph>
+        <h4>Comment</h4>
+        {{ s.description }}
+        <h4>Options</h4>
+        <!-- v-bind:attribute, or just :attribute in short, allows us to dynamically bind attributes -->
+        <a :href="s.link">Play</a>
+        </details>
+      </li>
+    </ol>
 
-  <form>
-    <label for="songTitle">Song Title:</label><br>
-    <input type="text" id="songTitle" name="songTitle" required><br><br>
+    <h3>
+      Suggest new song
+    </h3>
 
-    <label for="link">Link:</label><br>
-    <input type="url" id="link" name="link" required pattern="https?://.*" title="Include http:// or https://"><br><br>
+    <form @submit.prevent="addSong()">
+      <label for="songTitle">Song Title:</label><br>
+      <input type="text" id="songTitle" v-model="newSong.title" required><br><br>
 
-    <label for="comment">Comment:</label><br>
-    <textarea id="comment" name="comment" rows="4" cols="50" required></textarea><br><br>
+      <label for="link">Link:</label><br>
+      <input type="url" id="link" v-model="newSong.link" required pattern="https?://.*" title="Include http:// or https://"><br><br>
 
-    <input type="submit" value="Submit">
-</form>
+      <label for="comment">Comment:</label><br>
+      <textarea id="comment" v-model="newSong.description" rows="4" cols="50" required></textarea><br><br>
+
+      <input type="submit" value="Submit">
+    </form>
+  </div>
+  <script>
+    const { createApp } = Vue
+
+    createApp({
+      data: function() {
+        return {
+          user: 'currentUserName', // Assume this is dynamically set or retrieved from somewhere
+          suggestions : [
+            { title: 'Rick Astley - Never Gonna Give You Up', votes: 1, contributor: 'drmarkus', description: 'This song gets every party started.', link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'},
+            { title: 'I Want It That Way | Brooklyn Nine-Nine', votes: 0, contributor: 'fiat9002', description: 'I-C-O-N-I-C', link: 'https://www.youtube.com/watch?v=HlBYdiXdUa8'}
+          ],
+          newSong: { title: '', link: '', description: '' }
+        }
+      },
+      computed: {
+        sortedSuggestions: function() {
+          // Return a sorted copy of the suggestions array
+          return [...this.suggestions].sort((a, b) => b.votes - a.votes);
+        }
+      },
+      methods: {
+        removeSong: function(songTitle) {
+          // Find the index of the song by title
+          const index = this.suggestions.findIndex(s => s.title === songTitle);
+          // Remove the song if found
+          if (index !== -1) {
+            this.suggestions.splice(index, 1);
+          }
+        },
+        addSong: function () {
+          const song = { ...this.newSong, votes: 0, contributor: this.user };
+          this.suggestions.push(song);
+          this.newSong = { title: '', link: '', description: '' }; // Reset form
+        }
+      }
+    }).mount('#app')
+  </script>
 </body>
 
 </html>
