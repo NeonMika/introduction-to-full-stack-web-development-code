@@ -3,6 +3,8 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+var userRouter = require('./routes/users');
+
 var app = express();
 
 app.use(logger('dev'));
@@ -15,5 +17,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get(["/login", "/register"], function(req, res, next) {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
+
+app.use('/user_handling', userRouter);
 
 module.exports = app;
