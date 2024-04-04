@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login / Register</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+<div id="app">
+  <h1>Login</h1>
+  <form @submit.prevent="mockLogin">
+    <label for="loginEmail">Email:</label><br>
+    <input type="email" id="loginEmail" v-model="loginEmail"><br>
+    <label for="loginPassword">Password:</label><br>
+    <input type="password" id="loginPassword" v-model="loginPassword"><br><br>
+    <button type="submit">Login</button>
+  </form>
+
+  <h1>Register</h1>
+  <form @submit.prevent="mockRegister">
+    <label for="registerEmail">Email:</label><br>
+    <input type="email" id="registerEmail" v-model="registerEmail"><br>
+    <label for="registerPassword">Password:</label><br>
+    <input type="password" id="registerPassword" v-model="registerPassword"><br><br>
+    <button type="submit">Register</button>
+  </form>
+</div>
+
+<script>
+  const { createApp } = Vue
+
+  createApp({
+    data: function () {
+      return {
+        loginEmail: '',
+        loginPassword: '',
+        registerEmail: '',
+        registerPassword: '',
+      }
+    },
+    methods: {
+      mockLogin() {
+        alert(`Login attempt with email: ${this.loginEmail} and password: ${this.loginPassword}`);
+      },
+      mockRegister() {
+        alert(`Register attempt with email: ${this.registerEmail} and password: ${this.registerPassword}`);
+      }
+    }
+  }).mount("#app")
+</script>
+</body>
+</html>
