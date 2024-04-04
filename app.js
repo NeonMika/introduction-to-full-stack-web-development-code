@@ -11,4 +11,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// when user opens /login or /register, the file public/login.html should be returned
+app.get(["/login", "/register"], function(req, res, next) {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
 module.exports = app;

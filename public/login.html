@@ -40,10 +40,14 @@
     },
     methods: {
       mockLogin() {
-        alert(`Login attempt with email: ${this.loginEmail} and password: ${this.loginPassword}`);
+        alert(`Login attempt with email: ${this.loginEmail} and password: ${this.loginPassword}`)
+        // If we built a "real" Vue SPA (Single Page Application), we would navigate using "Vue Router" instead of
+        // directly changing window.location.href
+        window.location.href = '/index.html'
       },
       mockRegister() {
-        alert(`Register attempt with email: ${this.registerEmail} and password: ${this.registerPassword}`);
+        alert(`Register attempt with email: ${this.registerEmail} and password: ${this.registerPassword}`)
+        window.location.href = '/index.html'
       }
     }
   }).mount("#app")
