@@ -4,25 +4,26 @@
   <meta charset="UTF-8">
   <title>Login / Register</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
 <div id="app">
   <h1>Login</h1>
-  <form @submit.prevent="mockLogin">
+  <form @submit.prevent="loginFetch">
     <label for="loginEmail">Email:</label><br>
     <input type="email" id="loginEmail" v-model="loginEmail"><br>
     <label for="loginPassword">Password:</label><br>
     <input type="password" id="loginPassword" v-model="loginPassword"><br><br>
-    <button type="submit">Login</button>
+    <button type="submit">Login using fetch</button>
   </form>
 
   <h1>Register</h1>
-  <form @submit.prevent="mockRegister">
+  <form @submit.prevent="registerFetch">
     <label for="registerEmail">Email:</label><br>
     <input type="email" id="registerEmail" v-model="registerEmail"><br>
     <label for="registerPassword">Password:</label><br>
     <input type="password" id="registerPassword" v-model="registerPassword"><br><br>
-    <button type="submit">Register</button>
+    <button type="submit">Register using fetch</button>
   </form>
 </div>
 
@@ -39,15 +40,51 @@
       }
     },
     methods: {
-      mockLogin() {
-        alert(`Login attempt with email: ${this.loginEmail} and password: ${this.loginPassword}`)
-        // If we built a "real" Vue SPA (Single Page Application), we would navigate using "Vue Router" instead of
-        // directly changing window.location.href
-        window.location.href = '/index.html'
+      loginFetch() {
+        const url = new URL('http://localhost:3000/user_handling/login');
+        url.search = new URLSearchParams({
+          mail: this.loginEmail,
+          pw: this.loginPassword
+        }).toString();
+
+        fetch(url)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Login failed');
+            }
+            return response.json();
+          })
+          .then(data => {
+            localStorage.setItem('authToken', data.token);
+            alert('Registration successful');
+            window.location.href = '/index.html';
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Login failed');
+          });
       },
-      mockRegister() {
-        alert(`Register attempt with email: ${this.registerEmail} and password: ${this.registerPassword}`)
-        window.location.href = '/index.html'
+      registerFetch() {
+        const url = new URL('http://localhost:3000/user_handling/register');
+        url.search = new URLSearchParams({
+          mail: this.registerEmail,
+          pw: this.registerPassword
+        }).toString();
+
+        fetch(url)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Registration failed');
+            }
+            return response.json();
+          })
+          .then(data => {
+            alert('Registration successful');
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Registration failed');
+          });
       }
     }
   }).mount("#app")
