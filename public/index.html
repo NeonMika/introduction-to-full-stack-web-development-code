@@ -1,5 +1,5 @@
-<!-- 
-  This is a comment. 
+<!--
+  This is a comment.
   It can also span multipel lines.
 -->
 <!-- Using just "html" tells us that this is an HTML 5 file -->
@@ -21,60 +21,72 @@
     we can just use the following script.
   -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 
 <body>
   <div id="app">
     <nav>
       <ul>
-        <li><a href="login.html">Login / Register</a></li>
+        <li><a href="login.html">Login / Register</a> (Current JWT: <code style="font-size: small">{{ jwt.token ? `${jwt.token}, expires at ${jwt.expiresAt}` : "Not logged in" }}</code>)</li>
         <li><a href="demo.html">Here you can find the introduction page for HTML, CSS and JavaScript</a></li>
       </ul>
     </nav>
 
     <h1>
-      Party Planner
+      Party Planner {{ currentPartyName ? `for '${currentPartyName}'` : "" }}
     </h1>
 
     <h3>
-      Currently suggested songs
+      Party Name:
     </h3>
+    <input type="text" v-model="partyNameInput" id="suggestionTitle" required>&nbsp;<button @click="changeParty()">Open</button>
 
-    <ol>
-      <!-- Using Vue we can now have loops in our HTML -->
-      <li v-for="(s, idx) in sortedSuggestions">
-        <details>
-        <!-- The moustache syntax {{ x }} is used to add dynamic data to the site -->
-        <!-- The @event="..." syntax allows us to install event handlers -->
-        <summary>{{ s.title }} - {{ s.votes }} votes - <button @click="s.votes++" class="button-increase">^</button> &nbsp; <button @click="s.votes = Math.max(s.votes - 1, 0)" class="button-decrease">v</button> &nbsp; <button @click="removeSong(s.title)" class="button-remove">X</button></summary>
+    <div v-if="currentPartyName">
+      <h3>
+        Currently suggested suggestions
+      </h3>
 
-        <h4>Added by</h4>
-        <emph>{{ s.contributor }}</emph>
-        <h4>Comment</h4>
-        {{ s.description }}
-        <h4>Options</h4>
-        <!-- v-bind:attribute, or just :attribute in short, allows us to dynamically bind attributes -->
-        <a :href="s.link">Play</a>
-        </details>
-      </li>
-    </ol>
+      <ol>
+        <!-- Using Vue we can now have loops in our HTML -->
+        <li v-for="(s, idx) in sortedSuggestions">
+          <details>
+            <!-- The moustache syntax {{ x }} is used to add dynamic data to the site -->
+            <!-- The @event="..." syntax allows us to install event handlers -->
+            <summary>{{ s.title }} - {{ s.votes }} votes
+              <button @click="incrementVote(s)" class="button-increase">^</button>
+              <button @click="decrementVote(s)" class="button-decrease">v</button>
+              <button @click="deactivatePartySuggestion(s)" class="button-remove">X</button>
+            </summary>
 
-    <h3>
-      Suggest new song
-    </h3>
+            <h4>Added by</h4>
+            <em>{{ s.contributor }}</em>
+            <h4>Comment</h4>
+            {{ s.description }}
+            <h4>Options</h4>
+            <!-- v-bind:attribute, or just :attribute in short, allows us to dynamically bind attributes -->
+            <a :href="s.link">Play</a>
+          </details>
+        </li>
+      </ol>
 
-    <form @submit.prevent="addSong()">
-      <label for="songTitle">Song Title:</label><br>
-      <input type="text" id="songTitle" v-model="newSong.title" required><br><br>
+      <h3>
+        Suggest new suggestion
+      </h3>
 
-      <label for="link">Link:</label><br>
-      <input type="url" id="link" v-model="newSong.link" required pattern="https?://.*" title="Include http:// or https://"><br><br>
+      <form @submit.prevent="addSuggestion()">
+        <label for="suggestionTitle">Suggestion Title:</label><br>
+        <input type="text" id="suggestionTitle" v-model="newSuggestion.title" required><br><br>
 
-      <label for="comment">Comment:</label><br>
-      <textarea id="comment" v-model="newSong.description" rows="4" cols="50" required></textarea><br><br>
+        <label for="link">Link:</label><br>
+        <input type="url" id="link" v-model="newSuggestion.link" required pattern="https?://.*" title="Include http:// or https://"><br><br>
 
-      <input type="submit" value="Submit">
-    </form>
+        <label for="comment">Comment:</label><br>
+        <textarea id="comment" v-model="newSuggestion.description" rows="4" cols="50" required></textarea><br><br>
+
+        <input type="submit" value="Submit">
+      </form>
+    </div>
   </div>
   <script>
     const { createApp } = Vue
@@ -82,37 +94,81 @@
     createApp({
       data: function() {
         return {
-          user: 'currentUserName', // Assume this is dynamically set or retrieved from somewhere
-          suggestions : [
-            { title: 'Rick Astley - Never Gonna Give You Up', votes: 1, contributor: 'drmarkus', description: 'This song gets every party started.', link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'},
-            { title: 'I Want It That Way | Brooklyn Nine-Nine', votes: 0, contributor: 'fiat9002', description: 'I-C-O-N-I-C', link: 'https://www.youtube.com/watch?v=HlBYdiXdUa8'}
-          ],
-          newSong: { title: '', link: '', description: '' }
+          currentPartyName: "",
+          partyNameInput: "",
+          suggestions: [],
+          newSuggestion: { title: '', link: '', description: '' },
+          jwt: { // Retrieve JWT from local storage
+            token: localStorage.getItem("jwt"),
+            expiresAt: localStorage.getItem("expiresAt") ? new Date(+localStorage.getItem("expiresAt")) : null
+          }  
         }
       },
       computed: {
+        apiUrl: function() {
+          return `http://localhost:3000/api/suggestion/party/${encodeURIComponent(this.currentPartyName)}`
+        },
         sortedSuggestions: function() {
-          // Return a sorted copy of the suggestions array
+          // Sort suggestions by votes
           return [...this.suggestions].sort((a, b) => b.votes - a.votes);
         }
       },
+      mounted() {
+        console.log('Data in local storage:', localStorage)
+        // this.fetchSuggestions();  // not needed, will be fetched when we enter party name
+      },
       methods: {
-        removeSong: function(songTitle) {
-          // Find the index of the song by title
-          const index = this.suggestions.findIndex(s => s.title === songTitle);
-          // Remove the song if found
-          if (index !== -1) {
-            this.suggestions.splice(index, 1);
-          }
+        authorizationHeader() {
+          return this.jwt.token ? { 'Authorization': `Bearer ${this.jwt.token}` } : {};
         },
-        addSong: function () {
-          const song = { ...this.newSong, votes: 0, contributor: this.user };
-          this.suggestions.push(song);
-          this.newSong = { title: '', link: '', description: '' }; // Reset form
+        changeParty(partyName) {
+          this.currentPartyName = this.partyNameInput
+          this.fetchSuggestions();
+        },
+        fetchSuggestions() {
+          axios.get(`${this.apiUrl}/active/`, { headers: this.authorizationHeader() })
+            .then(response => this.suggestions = response.data)
+            .catch(error => alert(`Failed to fetch active suggestions\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
+        },
+        deactivatePartySuggestion(suggestion) {
+          axios.put(`${this.apiUrl}/deactivate/${encodeURIComponent(suggestion.title)}`, {}, { headers: this.authorizationHeader() })
+            // .then(() => this.fetchSuggestions()) // inefficient
+            .then(() => {
+              const index = this.suggestions.findIndex(s => s.title === suggestion.title);
+              // Remove the suggestion if found
+              if (index !== -1) {
+                this.suggestions.splice(index, 1);
+              }
+            })
+            .catch(error => alert(`Failed to deactive suggestion\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
+        },
+        addSuggestion() {
+          this.newSuggestion.partyName = this.currentPartyName
+          axios.post(`${this.apiUrl}/add`, this.newSuggestion, { headers: this.authorizationHeader() })
+            .then(response => {
+              this.newSuggestion = { title: '', link: '', description: '' };  // Reset form fields
+              // this.fetchSuggestions();  // inefficient
+              console.log(response)
+              this.suggestions.push(response.data) // the response contains the suggestion added into the DB
+            })
+            .catch(error => alert(`Failed to add suggestion\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
+        },
+        incrementVote(suggestion) {
+          axios.post(`${this.apiUrl}/votefor/${encodeURIComponent(suggestion.title)}`, {}, { headers: this.authorizationHeader() })
+            // .then(() => this.fetchSuggestions()) // inefficient
+            .then(() => suggestion.votes++)
+            .catch(error => alert(`Failed to increment vote\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
+        },
+        decrementVote(suggestion) {
+          axios.post(`${this.apiUrl}/voteagainst/${encodeURIComponent(suggestion.title)}`, {}, { headers: this.authorizationHeader() })
+             // .then(() => this.fetchSuggestions()) // inefficient
+            .then(() => suggestion.votes--)
+            .catch(error => alert(`Failed to decrement vote\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
         }
       }
     }).mount('#app')
   </script>
+
 </body>
 
 </html>
