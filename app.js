@@ -10,6 +10,7 @@ if (!jwtSecret) {
     process.exit(1); // Exit the process with an error code
 }
 
+var apiRouter = require('./routes/api');
 var userRouter = require('./routes/users');
 
 var app = express();
@@ -26,13 +27,14 @@ app.get(["/login", "/register"], function(req, res, next) {
 });
 
 function verifyToken(req, res, next) {
-    const token = req.headers['authorization'];
+    let token = req.headers['authorization'];
     req.jwtProvided = false;
     req.jwtVerifyError = false;
     req.jwtExpired = false;
     req.jwtPayload = null;
 
     if (token) {
+        token = token.replace("Bearer ", "")
         req.jwtProvided = true;
         jwt.verify(token, jwtSecret, (err, decoded) => {
             if (err) {
@@ -58,6 +60,9 @@ function verifyToken(req, res, next) {
 // for every static resource, which would introduce unncessary overhead.
 app.use(verifyToken);
 
+// handles /user_handling/login and /user_handling/register
 app.use('/user_handling', userRouter);
+
+app.use('/api', apiRouter)
 
 module.exports = app;
