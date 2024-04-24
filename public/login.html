@@ -9,85 +9,65 @@
 <body>
 <div id="app">
   <h1>Login</h1>
-  <form @submit.prevent="loginFetch">
+  <form @submit.prevent="loginAxios">
     <label for="loginEmail">Email:</label><br>
     <input type="email" id="loginEmail" v-model="loginEmail"><br>
     <label for="loginPassword">Password:</label><br>
     <input type="password" id="loginPassword" v-model="loginPassword"><br><br>
-    <button type="submit">Login using fetch</button>
+    <button type="submit">Login using Axios</button>
   </form>
 
   <h1>Register</h1>
-  <form @submit.prevent="registerFetch">
+  <form @submit.prevent="registerAxios">
     <label for="registerEmail">Email:</label><br>
     <input type="email" id="registerEmail" v-model="registerEmail"><br>
     <label for="registerPassword">Password:</label><br>
     <input type="password" id="registerPassword" v-model="registerPassword"><br><br>
-    <button type="submit">Register using fetch</button>
+    <button type="submit">Register using Axios</button>
   </form>
 </div>
 
 <script>
-  const { createApp } = Vue
+  const { createApp } = Vue;
 
   createApp({
-    data: function () {
+    data() {
       return {
         loginEmail: '',
         loginPassword: '',
         registerEmail: '',
         registerPassword: '',
-      }
+      };
     },
     methods: {
-      loginFetch() {
-        const url = new URL('http://localhost:3000/user_handling/login');
-        url.search = new URLSearchParams({
-          mail: this.loginEmail,
-          pw: this.loginPassword
-        }).toString();
-
-        fetch(url)
+      loginAxios() {
+        const url = 'http://localhost:3000/user_handling/login';
+        axios.post(url, { mail: this.loginEmail, pw: this.loginPassword })
           .then(response => {
-            if (!response.ok) {
-              throw new Error('Login failed');
-            }
-            return response.json();
-          })
-          .then(data => {
-            localStorage.setItem('authToken', data.token);
-            alert('Registration successful');
+            const { token, expiresAt } = response.data;
+            localStorage.setItem('jwt', token);
+            localStorage.setItem('expiresAt', expiresAt);
+            alert('Login successful');
             window.location.href = '/index.html';
           })
           .catch(error => {
             console.error('Error:', error);
-            alert('Login failed');
+            alert(`Login failed\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`);
           });
       },
-      registerFetch() {
-        const url = new URL('http://localhost:3000/user_handling/register');
-        url.search = new URLSearchParams({
-          mail: this.registerEmail,
-          pw: this.registerPassword
-        }).toString();
-
-        fetch(url)
+      registerAxios() {
+        const url = 'http://localhost:3000/user_handling/register';
+        axios.post(url, { mail: this.registerEmail, pw: this.registerPassword })
           .then(response => {
-            if (!response.ok) {
-              throw new Error('Registration failed');
-            }
-            return response.json();
-          })
-          .then(data => {
             alert('Registration successful');
           })
           .catch(error => {
             console.error('Error:', error);
-            alert('Registration failed');
+            alert(`Registration failed\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`);
           });
       }
     }
-  }).mount("#app")
+  }).mount("#app");
 </script>
 </body>
 </html>
