@@ -73,8 +73,10 @@
       <h3>
         Suggest new suggestion
       </h3>
-
-      <form @submit.prevent="addSuggestion()">
+      <div v-if="!loggedIn">
+        Please log in to submit suggestion
+      </div>
+      <form v-else @submit.prevent="addSuggestion()">
         <label for="suggestionTitle">Suggestion Title:</label><br>
         <input type="text" id="suggestionTitle" v-model="newSuggestion.title" required><br><br>
 
@@ -91,7 +93,7 @@
   <script>
     const { createApp } = Vue
 
-    createApp({
+    const vueApp = createApp({
       data: function() {
         return {
           currentPartyName: "",
@@ -111,6 +113,9 @@
         sortedSuggestions: function() {
           // Sort suggestions by votes
           return [...this.suggestions].sort((a, b) => b.votes - a.votes);
+        },
+        loggedIn: function() {
+          return this.jwt.token && this.jwt.expiresAt && this.jwt.expiresAt > new Date()
         }
       },
       mounted() {
