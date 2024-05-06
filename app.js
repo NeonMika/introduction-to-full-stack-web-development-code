@@ -2,6 +2,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const WebSocket = require('ws');
 
 var jwt = require('jsonwebtoken');
 const jwtSecret = process.env.JWT_SECRET;
@@ -79,5 +80,34 @@ app.use(verifyMiddleware);
 app.use('/user_handling', userRouter);
 
 app.use('/api', apiRouter)
+
+// create websocket server
+// One and only one of the "port", "server", or "noServer" options must be specified
+// Connect to this using the URL ws://localhost:3001
+const wss = new WebSocket.Server({ port: 3001 });
+wss.on('connection', (ws, req) => {
+  // Info: This connection is currently not secured using our JWT.
+  // Thus, anybody could connect to our websocket at the moment.
+  // In a real application, you now would, for example, perform some kind of handshake using messages or pass the JWT upon connection.
+  console.log(`WS Client connected, we now have ${wss.clients.size} connected clients`)
+
+  ws.on('message', function message(data, isBinary) {
+    const message = isBinary ? data : data.toString();
+  
+    console.log(`Received message: ${message}`)
+
+    // Broadcast the message to all clients
+    wss.clients.forEach(client => {
+      if (client !== ws && client.readyState === WebSocket.OPEN) {
+        client.send(message)
+        console.log(`> Forwarded message "${message}" to client`)
+      }
+    });
+  });
+
+  ws.on('close', () => {
+    console.log(`Client disconnected, we now have ${wss.clients.size} connected clients`)
+  });
+});
 
 module.exports = app;

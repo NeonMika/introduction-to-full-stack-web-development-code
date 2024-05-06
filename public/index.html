@@ -103,7 +103,8 @@
           jwt: { // Retrieve JWT from local storage
             token: localStorage.getItem("jwt"),
             expiresAt: localStorage.getItem("expiresAt") ? new Date(+localStorage.getItem("expiresAt")) : null
-          }  
+          },
+          ws: null // websocket initialized in mounted()
         }
       },
       computed: {
@@ -121,10 +122,39 @@
       mounted() {
         console.log('Data in local storage:', localStorage)
         // this.fetchSuggestions();  // not needed, will be fetched when we enter party name
+
+        this.setupWebsocketClient()
       },
       methods: {
         authorizationHeader() {
           return this.jwt.token ? { 'Authorization': `Bearer ${this.jwt.token}` } : {};
+        },
+        setupWebsocketClient() {
+          try {
+            const websocket = new WebSocket('ws://localhost:3001')
+            this.ws = websocket
+            // Define event listeners for the WebSocket
+            websocket.onopen = function(event) {
+              alert('Connected to the WebSocket server');
+              // this has a different meaning within a local function, so this.ws would not work
+              // thus, we store the websocket in another variable
+              websocket.send('Hello from the client!');
+            };
+
+            websocket.onmessage = function(event) {
+              alert(`Received message from the server: ${event.data}`);
+            };
+
+            websocket.onerror = function(event) {
+              alert('Error occurred while connecting to the WebSocket server');
+            };
+
+            websocket.onclose = function(event) {
+              alert('WebSocket connection closed');
+            };
+          } catch(ex) {
+            alert(ex)
+          }
         },
         changeParty(partyName) {
           this.currentPartyName = this.partyNameInput
