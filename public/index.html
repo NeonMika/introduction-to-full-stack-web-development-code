@@ -104,7 +104,7 @@
             token: localStorage.getItem("jwt"),
             expiresAt: localStorage.getItem("expiresAt") ? new Date(+localStorage.getItem("expiresAt")) : null
           },
-          ws: null // websocket initialized in mounted()
+          websocket: null // init in mounted()
         }
       },
       computed: {
@@ -119,86 +119,121 @@
           return this.jwt.token && this.jwt.expiresAt && this.jwt.expiresAt > new Date()
         }
       },
+      watch: {
+        currentPartyName: function(newName, oldName) {
+          this.websocket.send(JSON.stringify({ interestedIn : newName }))
+        }
+      },
       mounted() {
         console.log('Data in local storage:', localStorage)
-        // this.fetchSuggestions();  // not needed, will be fetched when we enter party name
-
-        this.setupWebsocketClient()
+        this.setupWebSocketClient()
+        // this.fetchActiveSuggestions();  // not needed, will be fetched when we enter party name
       },
       methods: {
         authorizationHeader() {
           return this.jwt.token ? { 'Authorization': `Bearer ${this.jwt.token}` } : {};
         },
-        setupWebsocketClient() {
-          try {
-            const websocket = new WebSocket('ws://localhost:3001')
-            this.ws = websocket
-            // Define event listeners for the WebSocket
-            websocket.onopen = function(event) {
-              alert('Connected to the WebSocket server');
-              // this has a different meaning within a local function, so this.ws would not work
-              // thus, we store the websocket in another variable
-              websocket.send('Hello from the client!');
-            };
+        setupWebSocketClient() {
+          const vue = this
+          const url = "ws://localhost:3002"
+          this.websocket = new WebSocket(url)
 
-            websocket.onmessage = function(event) {
-              alert(`Received message from the server: ${event.data}`);
-            };
+          vue.websocket.onopen = function(event) {
+            console.log("Connected to WS")
+          }
+          vue.websocket.onerror = function(event) {
+            console.error("Could not connect to WS / connection to WS closed unexpectedly!")
+          }
+          vue.websocket.onclose = function(event) {
+            console.log("Connection to WS server closed")
+            // TODO: Some logic to try to reconnect every X seconds?
+          }
 
-            websocket.onerror = function(event) {
-              alert('Error occurred while connecting to the WebSocket server');
-            };
+          vue.websocket.onmessage = function(event) {
+            const message = JSON.parse(event.data)
+            
+            console.log("Received WS message", event.data)
 
-            websocket.onclose = function(event) {
-              alert('WebSocket connection closed');
-            };
-          } catch(ex) {
-            alert(ex)
+            // TODO make sure this is not a reaction to one of our actions
+            const { type, op, id, entity} = message
+            if(type === 'suggestion') {
+              switch(op) {
+                case 'add':
+                  vue.addSuggestionLocal(entity)
+                  break
+                case 'update':
+                  vue.editSuggestionLocal(entity)
+                  break
+                case 'deactivate':
+                  vue.deactivatePartySuggestionLocal(id)
+                  break
+                case 'upvote':
+                  vue.incrementVoteLocal(id)
+                  break
+                case 'downvote':
+                  vue.decrementVoteLocal(id)
+                  break
+              }
+            }
           }
         },
         changeParty(partyName) {
           this.currentPartyName = this.partyNameInput
-          this.fetchSuggestions();
+          this.fetchActiveSuggestions();
         },
-        fetchSuggestions() {
+        fetchActiveSuggestions() {
           axios.get(`${this.apiUrl}/active/`, { headers: this.authorizationHeader() })
             .then(response => this.suggestions = response.data)
             .catch(error => alert(`Failed to fetch active suggestions\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
         },
-        deactivatePartySuggestion(suggestion) {
-          axios.put(`${this.apiUrl}/deactivate/${encodeURIComponent(suggestion.title)}`, {}, { headers: this.authorizationHeader() })
-            // .then(() => this.fetchSuggestions()) // inefficient
-            .then(() => {
-              const index = this.suggestions.findIndex(s => s.title === suggestion.title);
-              // Remove the suggestion if found
-              if (index !== -1) {
-                this.suggestions.splice(index, 1);
-              }
-            })
-            .catch(error => alert(`Failed to deactive suggestion\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
+        findLocalSuggestionIndexByID(suggestionID) {
+          return this.suggestions.findIndex(s => s._id === suggestionID);
+        },
+        findLocalSuggestionByID(suggestionID) {
+          return this.suggestions[this.findLocalSuggestionIndexByID(suggestionID)];
         },
         addSuggestion() {
           this.newSuggestion.partyName = this.currentPartyName
           axios.post(`${this.apiUrl}/add`, this.newSuggestion, { headers: this.authorizationHeader() })
-            .then(response => {
+            .then(_response => {
               this.newSuggestion = { title: '', link: '', description: '' };  // Reset form fields
-              // this.fetchSuggestions();  // inefficient
-              console.log(response)
-              this.suggestions.push(response.data) // the response contains the suggestion added into the DB
+              // this.fetchActiveSuggestions();  // inefficient
+              // this.addSuggestionLocal(response.data) // not needed anymore, will be handled by websocket
             })
             .catch(error => alert(`Failed to add suggestion\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
         },
+        addSuggestionLocal(newSuggestion) {
+          this.suggestions.push(newSuggestion)
+        },
+        editSuggestionLocal(editedSuggestion) {
+          this.suggestions[this.findLocalSuggestionIndexByID(editedSuggestion.id)] = editedSuggestion
+        },
+        deactivatePartySuggestion(suggestion) {
+          axios.put(`${this.apiUrl}/deactivate/${encodeURIComponent(suggestion.title)}`, {}, { headers: this.authorizationHeader() })
+            // .then(() => this.fetchActiveSuggestions()) // inefficient
+            // .then(() => { this.deactivatePartySuggestionLocal(suggestion._id) })  // not needed anymore, will be handled by websocket
+            .catch(error => alert(`Failed to deactive suggestion\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
+        },
+        deactivatePartySuggestionLocal(suggestionId) {
+          this.suggestions.splice(this.findLocalSuggestionIndexByID(suggestionId), 1);
+        },
         incrementVote(suggestion) {
           axios.post(`${this.apiUrl}/votefor/${encodeURIComponent(suggestion.title)}`, {}, { headers: this.authorizationHeader() })
-            // .then(() => this.fetchSuggestions()) // inefficient
-            .then(() => suggestion.votes++)
+            // .then(() => this.fetchActiveSuggestions()) // inefficient
+            // .then(() => { this.incrementVoteLocal(suggestion._id) }) // not needed anymore, will be handled by websocket
             .catch(error => alert(`Failed to increment vote\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
+        },
+        incrementVoteLocal(suggestionId) {
+          this.findLocalSuggestionByID(suggestionId).votes++
         },
         decrementVote(suggestion) {
           axios.post(`${this.apiUrl}/voteagainst/${encodeURIComponent(suggestion.title)}`, {}, { headers: this.authorizationHeader() })
-             // .then(() => this.fetchSuggestions()) // inefficient
-            .then(() => suggestion.votes--)
+            // .then(() => this.fetchActiveSuggestions()) // inefficient
+            // .then(() => this.incrementVoteLocal(suggestion._id)) // not needed anymore, will be handled by websocket
             .catch(error => alert(`Failed to decrement vote\nCode: ${error.code}\nMessage: ${error.message}\nResponse: ${JSON.stringify(error.response, null, 2)}`));
+        },
+        decrementVoteLocal(suggestionId) {
+          this.findLocalSuggestionByID(suggestionId).votes--
         }
       }
     }).mount('#app')

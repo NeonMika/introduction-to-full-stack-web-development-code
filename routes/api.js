@@ -1,6 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database');
+var WebSocket = require('ws');
+
+const wss = new WebSocket.Server({ port: 3002 })
+wss.on('connection', (clientWS, req) => {
+  console.log(`WS client connected, now ${wss.clients.size} connected`)
+
+  clientWS.on('message', (data, isBinary) => {
+    const message = JSON.parse(data)
+    if(message.interestedIn) {
+      clientWS.interestedIn = message.interestedIn
+      console.log(`WS client switched interest to ${message.interestedIn}`)
+    }
+  })
+
+  clientWS.on('close', () => {
+    console.log(`WS Client disconnected, now ${wss.clients.size} connected`)
+  })
+})
+
+function broadcast(info, topic) {
+  const strInfo = JSON.stringify(info, null, 2)
+  console.log(`broadcasting ${strInfo} to clients interested in '${topic}'`)
+  for(broadcastTarget of [...wss.clients].filter(c => c.interestedIn === topic)) {
+    if(broadcastTarget.readyState === WebSocket.OPEN) {
+      broadcastTarget.send(strInfo)
+    }
+  }
+}
 
 // Middleware to check if user is logged in
 function isLoggedIn(req, res, next) {
@@ -23,15 +51,20 @@ function isAdmin(req, res, next) {
   }
 }
 
+// #######################
+// ##### USER API ########
+// #######################
+
 // Update user endpoint
 router.put('/user/update', isLoggedIn, async (req, res) => {
   try {
     const newUserData = req.body
     const updatedUser = await db.user.updateUser(req.jwtPayload.userMail, newUserData);
+    broadcast({type: 'user', id: updatedUser._id, entity: updatedUser, op: 'update'})
     res.json(updatedUser);
   } catch (error) {
     res.status(500).send('Error updating user');
-    console.error(error)
+    console.error(error);
   }
 });
 
@@ -46,45 +79,12 @@ router.get('/user/all', isLoggedIn, isAdmin, async (req, res) => {
   }
 });
 
-// Add new suggestion endpoint
-router.post('/suggestion/party/:partyName/add', isLoggedIn, async (req, res) => {
-  try {
-    const newSuggestion = req.body
-    newSuggestion.active = true
-    newSuggestion.contributor = req.jwtPayload.userMail
-    newSuggestion.partyName = req.params.partyName
-    newSuggestion.votes = 0
-
-    if(newSuggestion.active === undefined || 
-       newSuggestion.votes === undefined  || 
-       newSuggestion.contributor === undefined  || 
-       newSuggestion.partyName === undefined  || 
-       newSuggestion.title === undefined || 
-       newSuggestion.description === undefined  || 
-       newSuggestion.link === undefined ) {
-      return res.status(400).send(`Missing information in suggestion.
-      newSuggestion.active: ${newSuggestion.active}
-      newSuggestion.votes: ${newSuggestion.votes}
-      newSuggestion.contributor: ${newSuggestion.contributor}
-      newSuggestion.partyName: ${newSuggestion.partyName}
-      newSuggestion.title: ${newSuggestion.title}
-      newSuggestion.description: ${newSuggestion.description}
-      newSuggestion.link: ${newSuggestion.link}
-      ` );
-    }
-    const existingSuggestion = await db.suggestion.findPartySuggestionByTitle(newSuggestion.title, req.params.partyName)
-    if(existingSuggestion) {
-      return res.status(409).send('Suggestion with same name already exists');
-    }
-
-    const ack = await db.suggestion.addSuggestion(newSuggestion);
-    newSuggestion._id = ack.insertedId
-    res.status(201).json(newSuggestion);
-  } catch (error) {
-    res.status(500).send('Error adding suggestion');
-    console.error(error)
-  }
-});
+// ####################################
+// ##### GLOBAL SUGGESTION API ########
+// ####################################
+//
+// These endpoints return suggestions independent of the
+// party they are part of. For example
 
 // Find suggestion by ID endpoint
 router.get('/suggestion/id/:id', async (req, res) => {
@@ -130,6 +130,55 @@ router.get('/suggestion/contributor/:contributor', async (req, res) => {
   }
 });
 
+// ############################################
+// ##### PARTY-SPECIFIC SUGGESTION API ########
+// ############################################
+//
+// All these endpoints contain a :partyName path param, which
+// has to be given to identify the party we are operating on 
+
+// Add new suggestion endpoint
+router.post('/suggestion/party/:partyName/add', isLoggedIn, async (req, res) => {
+  try {
+    const newSuggestion = req.body
+    newSuggestion.active = true
+    newSuggestion.contributor = req.jwtPayload.userMail
+    newSuggestion.partyName = req.params.partyName
+    newSuggestion.votes = 0
+
+    if(newSuggestion.active === undefined || 
+       newSuggestion.votes === undefined  || 
+       newSuggestion.contributor === undefined  || 
+       newSuggestion.partyName === undefined  || 
+       newSuggestion.title === undefined || 
+       newSuggestion.description === undefined  || 
+       newSuggestion.link === undefined ) {
+      return res.status(400).send(`Missing information in suggestion.
+      newSuggestion.active: ${newSuggestion.active}
+      newSuggestion.votes: ${newSuggestion.votes}
+      newSuggestion.contributor: ${newSuggestion.contributor}
+      newSuggestion.partyName: ${newSuggestion.partyName}
+      newSuggestion.title: ${newSuggestion.title}
+      newSuggestion.description: ${newSuggestion.description}
+      newSuggestion.link: ${newSuggestion.link}
+      ` );
+    }
+    const existingSuggestion = await db.suggestion.findPartySuggestionByTitle(newSuggestion.title, req.params.partyName)
+    if(existingSuggestion) {
+      return res.status(409).send('Suggestion with same name already exists');
+    }
+
+    const ack = await db.suggestion.addSuggestion(newSuggestion);
+    newSuggestion._id = ack.insertedId
+    // we send 'id' for every broadcast and 'entity' for adds and edits
+    broadcast({ type: 'suggestion', id: ack.insertedId, entity: newSuggestion, op: 'add' }, req.params.partyName)
+    res.status(201).json(newSuggestion);
+  } catch (error) {
+    res.status(500).send('Error adding suggestion');
+    console.error(error)
+  }
+});
+
 // Find suggestion by title endpoint
 router.get('/suggestion/party/:partyName/title/:title', async (req, res) => {
   try {
@@ -155,8 +204,9 @@ router.get('/suggestion/party/:partyName/active', async (req, res) => {
 // Increment suggestion vote endpoint
 router.post('/suggestion/party/:partyName/votefor/:title', async (req, res) => {
   try {
-    const ack = await db.suggestion.incrementPartySuggestionVote(req.params.title, req.params.partyName);
-    res.json(await db.suggestion.findSuggestionById(ack.upsertedId));
+    const updated = await db.suggestion.incrementPartySuggestionVote(req.params.title, req.params.partyName);
+    broadcast({ type: 'suggestion', id: updated._id, op: 'upvote' }, req.params.partyName)
+    res.json(updated);
   } catch (error) {
     res.status(500).send('Error incrementing vote');
     console.error(error)
@@ -166,8 +216,9 @@ router.post('/suggestion/party/:partyName/votefor/:title', async (req, res) => {
 // Decrement suggestion vote endpoint
 router.post('/suggestion/party/:partyName/voteagainst/:title', async (req, res) => {
   try {
-    const ack = await db.suggestion.decrementPartySuggestionVote(req.params.title, req.params.partyName);
-    res.json(await db.suggestion.findSuggestionById(ack.upsertedId));
+    const updated = await db.suggestion.decrementPartySuggestionVote(req.params.title, req.params.partyName);
+    broadcast({ type: 'suggestion', id: updated._id, op: 'downvote' }, req.params.partyName)
+    res.json(updated);
   } catch (error) {
     res.status(500).send('Error decrementing vote');
     console.error(error)
@@ -177,8 +228,9 @@ router.post('/suggestion/party/:partyName/voteagainst/:title', async (req, res) 
 // Deactivate suggestion endpoint
 router.put('/suggestion/party/:partyName/deactivate/:title', async (req, res) => {
   try {
-    const ack = await db.suggestion.deactivatePartySuggestion(req.params.title, req.params.partyName);
-    res.json(await db.suggestion.findSuggestionById(ack.upsertedId));
+    const updated = await db.suggestion.deactivatePartySuggestion(req.params.title, req.params.partyName);
+    broadcast({ type: 'suggestion', id: updated._id, op: 'deactivate' }, req.params.partyName)
+    res.json(updated);
   } catch (error) {
     res.status(500).send('Error deactivating suggestion');
     console.error(error)
@@ -189,8 +241,9 @@ router.put('/suggestion/party/:partyName/deactivate/:title', async (req, res) =>
 router.put('/suggestion/party/:partyName/update/:title', async (req, res) => {
   try {
     const newSuggestionData = req.body
-    const ack = await db.suggestion.updatePartySuggestion(req.params.title, req.params.partyName, newSuggestionData);
-    res.json(await db.suggestion.findSuggestionById(ack.upsertedId));
+    const updated = await db.suggestion.updatePartySuggestion(req.params.title, req.params.partyName, newSuggestionData);
+    broadcast({ type: 'suggestion', id: updated._id, entity: updated, op: 'update' }, req.params.partyName)
+    res.json(updated);
   } catch (error) {
     res.status(500).send('Error updating suggestion');
     console.error(error)

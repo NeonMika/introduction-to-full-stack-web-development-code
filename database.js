@@ -59,7 +59,7 @@ async function findUserByEmail(email) {
 async function updateUser(mail, newData) {
   const updatedAt = new Date();
   newData.updatedAt = updatedAt;
-  return await users.updateOne({ mail: mail }, { $set: newData, $push: { changes: { at: newData.updatedAt, change: "edit" } } }, { new: true });
+  return await users.findOneAndUpdate({ mail: mail }, { $set: newData, $push: { changes: { at: newData.updatedAt, change: "edit" } } }, { returnNewDocument: true });
 }
 
 // Method to get all users
@@ -105,26 +105,26 @@ async function findActivePartySuggestions(partyName) {
 // Method to increment a suggestion's vote
 async function incrementPartySuggestionVote(title, partyName) {
   const updatedAt = new Date();
-  return await suggestions.updateOne({ title: title, partyName : partyName }, { $inc: { votes: 1 }, $push: { changes: { at: updatedAt, change: "upvote" } }, $set: { updatedAt: updatedAt } });
+  return await suggestions.findOneAndUpdate({ title: title, partyName : partyName }, { $inc: { votes: 1 }, $push: { changes: { at: updatedAt, change: "upvote" } }, $set: { updatedAt: updatedAt } }, { returnNewDocument: true });
 }
 
 // Method to decrement a suggestion's vote
 async function decrementPartySuggestionVote(title, partyName) {
   const updatedAt = new Date();
-  return await suggestions.updateOne({ title: title, partyName : partyName }, { $inc: { votes: -1 }, $push: { changes: { at: updatedAt, change: "downvote" } }, $set: { updatedAt: updatedAt } });
+  return await suggestions.findOneAndUpdate({ title: title, partyName : partyName }, { $inc: { votes: -1 }, $push: { changes: { at: updatedAt, change: "downvote" } }, $set: { updatedAt: updatedAt } }, { returnNewDocument: true });
 }
 
 // Method to deactivate a suggestion
 async function deactivatePartySuggestion(title, partyName) {
   const updatedAt = new Date();
-  return await suggestions.updateOne({ title: title, partyName : partyName }, { $set: { active: false }, $push: { changes: { at: updatedAt, change: "deactivate" } }, $set: { updatedAt: updatedAt } });
+  return await suggestions.findOneAndUpdate({ title: title, partyName : partyName }, { $set: { active: false, updatedAt: updatedAt }, $push: { changes: { at: updatedAt, change: "deactivate" } } }, { returnNewDocument: true });
 }
 
 // Method to update a suggestion's data
 async function updatePartySuggestion(title, partyName, newData) {
   const updatedAt = new Date();
   newData.updatedAt = updatedAt;
-  return await suggestions.updateOne({ title: title, partyName: partyName, }, { $set: newData, $push: { changes: { at: updatedAt, change: "edit" } } });
+  return await suggestions.findOneAndUpdate({ title: title, partyName: partyName, }, { $set: newData, $push: { changes: { at: updatedAt, change: "edit" } } }, { returnNewDocument: true });
 }
 
 // Connect to the database upon startup and stop server on error
